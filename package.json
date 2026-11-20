@@ -1,7 +1,7 @@
 {
   "name": "Boilerplate-code",
   "version": "1.0.0",
-  "description": "",
+  "description": "REST API Bulletin Board — a learning backend project built with Node.js + Express 5 and JWT authentication with refresh tokens. Users can register, create, edit, and delete their own announcements, while anonymous visitors can browse the list and view details. Uses PostgreSQL via Prisma 7, Zod validation, bcrypt for passwords, and Swagger/OpenAPI for documentation. Supports pagination, search, and sorting of announcements.",
   "main": "index.js",
   "scripts": {
     "start": "tsx app.ts",
