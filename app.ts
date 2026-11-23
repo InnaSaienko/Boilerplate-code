@@ -3,6 +3,8 @@ import type { NextFunction, Request, Response } from "express";
 import cookieParser from "cookie-parser";
 import {errorHandler} from "./src/middleware/errorHandler.ts"
 import authRoutes from "./src/routes/auth.routes.ts";
+import {generateOpenApiDocument} from "./src/openapi.ts";
+import swaggerUi from "swagger-ui-express";
 
 const app = express();
 
@@ -15,6 +17,9 @@ app.use((_req: Request, res: Response) => {
 });
 
 app.use(errorHandler);
+
+const openApiDocument = generateOpenApiDocument();
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(openApiDocument));
 
 const PORT = process.env.PORT || 3000;
 

@@ -1,7 +1,6 @@
 import { Router } from "express";
-
 import { authenticate } from "../middleware/authenticate.ts";
-import { validate } from "../middleware/validate.ts";
+import { validateBody } from "../middleware/validateBody.ts";
 import {
   loginSchema,
   refreshSchema,
@@ -17,9 +16,9 @@ import {
 
 const authRouter = Router();
 
-authRouter.post("/register", validate(registerSchema), register);
-authRouter.post("/login", validate(loginSchema), login);
-authRouter.post("/refresh", validate(refreshSchema), refresh);
+authRouter.post("/register", validateBody(registerSchema), register);
+authRouter.post("/login", validateBody(loginSchema), login);
+authRouter.post("/refresh", validateBody(refreshSchema), refresh);
 authRouter.post("/logout", logout);
 authRouter.get("/me", authenticate, me);
 
