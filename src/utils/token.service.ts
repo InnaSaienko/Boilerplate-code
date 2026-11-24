@@ -35,7 +35,19 @@ export async function createRefreshToken(userId: string) {
     return token;
 }
 export function verifyAccessToken(token: string) {
+    return jwt.verify(token, process.env.JWT_SECRET as string) as {
+        userId: string;
+        iat?: number;
+        exp?: number;
+    };
+
 }
 
 export function verifyRefreshToken(token: string) {
+    return jwt.verify(token, process.env.JWT_SECRET as string) as {
+        userId: string;
+        iat?: number;
+        exp?: number;
+    }
+
 }

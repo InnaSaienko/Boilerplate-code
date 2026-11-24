@@ -3,7 +3,7 @@ import prisma from "../../prisma/client.ts";
 import bcrypt from "bcrypt";
 import {
     createRefreshToken,
-    generateAccessToken,
+    generateAccessToken, verifyRefreshToken,
 } from "../utils/token.service.ts";
 import {asyncHandler} from "../utils/asyncHandler.ts";
 import {HttpError} from "../utils/httpError.ts";
@@ -80,17 +80,77 @@ export const login = asyncHandler(async (req, res) => {
     })
 })
 
-export async function refresh(req: Request, res: Response, next: NextFunction) {
-    // TODO: verify refresh token, rotate tokens
-    return res.status(501).json({error: "Not implemented"});
-}
+export const refresh = asyncHandler(async (req, res) => {
+    const {refreshToken} = req.body;
 
-export async function logout(req: Request, res: Response, next: NextFunction) {
-    // TODO: invalidate refresh token
-    return res.status(501).json({error: "Not implemented"});
-}
+    let payload: { userId: string };
 
-export async function me(req: Request, res: Response, next: NextFunction) {
-    // TODO: return current authenticated user
-    return res.status(501).json({error: "Not implemented"});
-}
+    try {
+        payload = verifyRefreshToken(refreshToken);
+    } catch {
+        throw new HttpError(401, "Invalid or expired refresh token");
+    }
+
+    const storedToken = await prisma.refreshToken.findUnique({
+        where: {token: refreshToken},
+    });
+
+    if (!storedToken || storedToken.expiresAt < new Date()) {
+        throw new HttpError(401, "Invalid or expired refresh token");
+    }
+
+    await prisma.refreshToken.delete({
+        where: {id: storedToken.id},
+    });
+
+    const user = await prisma.user.findUnique({
+        where: {id: payload.userId},
+        select: {id: true, username: true, email: true, name: true},
+    });
+
+    if (!user) {
+        throw new HttpError(401, "Invalid or expired refresh token");
+    }
+
+    const newAccessToken = generateAccessToken(user.id);
+    const newRefreshToken = await createRefreshToken(user.id);
+
+    res.status(200).json({
+        user,
+        accessToken: newAccessToken,
+        refreshToken: newRefreshToken,
+    });
+})
+
+export const logout = asyncHandler(async (req, res) => {
+    const {refreshToken} = req.body;
+
+    if (refreshToken) {
+        await prisma.refreshToken.deleteMany({
+            where: {token: refreshToken},
+        });
+    }
+
+    res.status(204).send();
+
+})
+
+export const me = asyncHandler(async (req, res) => {
+    if (!req.user?.userId) {
+        throw new HttpError(401, "Unauthorized");
+    }
+
+    const user = await prisma.user.findUnique({
+        where: {id: req.user.userId},
+        select: {
+            id: true,
+            username: true,
+            email: true,
+            name: true,
+        },
+    });
+
+    if (!user) {
+        throw new HttpError(404, "User not found");
+    }
+})

@@ -1,6 +1,6 @@
 import type {NextFunction, Request, Response} from "express";
-import jwt from "jsonwebtoken";
 import {HttpError} from "../utils/httpError.ts";
+import {verifyAccessToken} from "../utils/token.service.ts";
 
 export function authenticate(req: Request, _res: Response, next: NextFunction) {
     const authHeader = req.headers.authorization;
@@ -12,13 +12,7 @@ export function authenticate(req: Request, _res: Response, next: NextFunction) {
     const token = authHeader.slice(7);
 
     try {
-        const payload = jwt.verify(token, process.env.JWT_SECRET as string) as {
-            userId: string;
-            iat?: number;
-            exp?: number;
-        };
-
-        req.user = payload;
+        req.user = verifyAccessToken(token);
         next();
 
     } catch {
