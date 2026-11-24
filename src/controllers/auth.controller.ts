@@ -1,5 +1,5 @@
 import type {NextFunction, Request, Response} from "express";
-import {RegisterBody} from "../validators/auth.validator.ts";
+import {LoginBody, RegisterBody} from "../validators/auth.validator.ts";
 import prisma from "../../prisma/client.ts";
 import bcrypt from "bcrypt";
 import {generateAccessToken, generateRefreshToken, REFRESH_TOKEN_TTL_MS} from "../utils/token.service.ts";
@@ -41,7 +41,7 @@ export async function register(req: Request<{}, {}, RegisterBody>, res: Response
         });
 
 
-        return res.status(201).json({
+        res.status(201).json({
             user: {
                 id: user.id,
                 username: user.username,
@@ -56,8 +56,45 @@ export async function register(req: Request<{}, {}, RegisterBody>, res: Response
     }
 };
 
-export async function login(req: Request, res: Response, next: NextFunction) {
-    // TODO: verify credentials, generate access + refresh tokens
+export async function login(req: Request<{}, {}, LoginBody>, res: Response, next: NextFunction) {
+    try{
+        const {username, password} = req.body;
+        const user = await prisma.user.findUnique({where: {username}});
+        if (!user) {
+            return res.status(401).json({ error: "Invalid credentials" });
+        }
+        const isValidPassword = await bcrypt.compare(password, user.password);
+        if (!isValidPassword) {
+            return res.status(401).json({ error: "Invalid credentials" });
+        }
+
+        const accessToken = generateAccessToken(user.id);
+        const refreshToken = generateRefreshToken(user.id);
+
+        await prisma.refreshToken.deleteMany({
+            where: { userId: user.id },
+        });
+        await prisma.refreshToken.create({
+            data: {
+                token: refreshToken,
+                userId: user.id,
+                expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL_MS),
+            },
+        });
+        res.status(200).json({
+            user: {
+                id: user.id,
+                username: user.username,
+                email: user.email,
+                name: user.name,
+            },
+            accessToken,
+            refreshToken,
+        })
+
+    } catch (e) {
+        next(e);
+    }
     return res.status(501).json({error: "Not implemented"});
 }
 
