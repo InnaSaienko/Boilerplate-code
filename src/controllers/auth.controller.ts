@@ -6,9 +6,10 @@ import {
 } from "../utils/token.service.ts";
 import {asyncHandler} from "../utils/asyncHandler.ts";
 import {HttpError} from "../utils/httpError.ts";
+import {LoginBody, RefreshInput, RegisterBody} from "../validators/auth.validator.ts";
 
 export const register = asyncHandler(async (req, res) => {
-    const {username, email, password, name} = req.body;
+    const {username, email, password, name} = req.body as RegisterBody;
 
     const existingUser = await prisma.user.findFirst({
         where: {
@@ -49,7 +50,7 @@ export const register = asyncHandler(async (req, res) => {
 })
 
 export const login = asyncHandler(async (req, res) => {
-    const {username, password} = req.body;
+    const {username, password} = req.body as LoginBody;
     const user = await prisma.user.findUnique({where: {username}});
 
     if (!user) {
@@ -80,7 +81,7 @@ export const login = asyncHandler(async (req, res) => {
 })
 
 export const refresh = asyncHandler(async (req, res) => {
-    const {refreshToken} = req.body;
+    const {refreshToken} = req.body as RefreshInput;
 
     let payload: { userId: string };
 
@@ -122,7 +123,7 @@ export const refresh = asyncHandler(async (req, res) => {
 })
 
 export const logout = asyncHandler(async (req, res) => {
-    const {refreshToken} = req.body;
+    const {refreshToken} = req.body  as {refreshToken?: string};
 
     if (refreshToken) {
         await prisma.refreshToken.deleteMany({

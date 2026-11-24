@@ -13,10 +13,11 @@ export const loginSchema = z.object({
 });
 
 export const refreshSchema = z.object({
-    body: z.object({
-        refreshToken: z.string().min(1),
-    }),
+        refreshToken: z.string().min(1)
 });
+
+
 
 export type RegisterBody = z.infer<typeof registerSchema>;
 export type LoginBody = z.infer<typeof loginSchema>;
+export type RefreshInput = z.infer<typeof refreshSchema>;
