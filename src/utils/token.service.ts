@@ -6,7 +6,7 @@ export const REFRESH_TOKEN_EXPIRES = "7d";
 export const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 
-export function generateAccessToken(userId: string) {
+export function generateAccessToken(userId: number) {
     return jwt.sign(
         { userId },
         process.env.JWT_SECRET as string,
@@ -15,7 +15,7 @@ export function generateAccessToken(userId: string) {
 
 }
 
-export function generateRefreshToken(userId: string) {
+export function generateRefreshToken(userId: number) {
     return jwt.sign(
         { userId },
         process.env.JWT_SECRET as string,
@@ -23,7 +23,7 @@ export function generateRefreshToken(userId: string) {
     );
 }
 
-export async function createRefreshToken(userId: string) {
+export async function createRefreshToken(userId: number) {
     const token = generateRefreshToken(userId);
     await prisma.refreshToken.create({
         data: {
@@ -36,7 +36,7 @@ export async function createRefreshToken(userId: string) {
 }
 export function verifyToken(token: string) {
     return jwt.verify(token, process.env.JWT_SECRET as string) as {
-        userId: string;
+        userId: number;
         iat?: number;
         exp?: number;
     };

@@ -83,7 +83,7 @@ export const login = asyncHandler(async (req, res) => {
 export const refresh = asyncHandler(async (req, res) => {
     const {refreshToken} = req.body as RefreshInput;
 
-    let payload: { userId: string };
+    let payload: { userId: number };
 
     try {
         payload = verifyRefreshToken(refreshToken);
