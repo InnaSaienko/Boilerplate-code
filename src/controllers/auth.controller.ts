@@ -2,7 +2,10 @@ import type {NextFunction, Request, Response} from "express";
 import {LoginBody, RegisterBody} from "../validators/auth.validator.ts";
 import prisma from "../../prisma/client.ts";
 import bcrypt from "bcrypt";
-import {generateAccessToken, generateRefreshToken, REFRESH_TOKEN_TTL_MS} from "../utils/token.service.ts";
+import {
+    createRefreshToken,
+    generateAccessToken,
+} from "../utils/token.service.ts";
 
 export async function register(req: Request<{}, {}, RegisterBody>, res: Response, next: NextFunction) {
     try {
@@ -30,16 +33,7 @@ export async function register(req: Request<{}, {}, RegisterBody>, res: Response
         });
 
         const accessToken = generateAccessToken(user.id);
-        const refreshToken = generateRefreshToken(user.id)
-
-        await prisma.refreshToken.create({
-            data: {
-                token: refreshToken,
-                userId: user.id,
-                expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL_MS),
-            },
-        });
-
+        const refreshToken = await createRefreshToken(user.id);
 
         res.status(201).json({
             user: {
@@ -69,18 +63,12 @@ export async function login(req: Request<{}, {}, LoginBody>, res: Response, next
         }
 
         const accessToken = generateAccessToken(user.id);
-        const refreshToken = generateRefreshToken(user.id);
+        const refreshToken = await createRefreshToken(user.id);
 
         await prisma.refreshToken.deleteMany({
             where: { userId: user.id },
         });
-        await prisma.refreshToken.create({
-            data: {
-                token: refreshToken,
-                userId: user.id,
-                expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL_MS),
-            },
-        });
+
         res.status(200).json({
             user: {
                 id: user.id,

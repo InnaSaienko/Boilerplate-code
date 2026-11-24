@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken";
+import prisma from "../../prisma/client.ts";
 
 export const ACCESS_TOKEN_EXPIRES = "15m";
 export const REFRESH_TOKEN_EXPIRES = "7d";
@@ -22,6 +23,17 @@ export function generateRefreshToken(userId: string) {
     );
 }
 
+export async function createRefreshToken(userId: string) {
+    const token = generateRefreshToken(userId);
+    await prisma.refreshToken.create({
+        data: {
+            token,
+            userId,
+            expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL_MS),
+        },
+    });
+    return token;
+}
 export function verifyAccessToken(token: string) {
 }
 
