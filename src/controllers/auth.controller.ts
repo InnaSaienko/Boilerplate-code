@@ -1,90 +1,84 @@
 import type {NextFunction, Request, Response} from "express";
-import {LoginBody, RegisterBody} from "../validators/auth.validator.ts";
 import prisma from "../../prisma/client.ts";
 import bcrypt from "bcrypt";
 import {
     createRefreshToken,
     generateAccessToken,
 } from "../utils/token.service.ts";
+import {asyncHandler} from "../utils/asyncHandler.ts";
+import {HttpError} from "../utils/httpError.ts";
 
-export async function register(req: Request<{}, {}, RegisterBody>, res: Response, next: NextFunction) {
-    try {
-        const {username, email, password, name} = req.body;
+export const register = asyncHandler(async (req, res) => {
+    const {username, email, password, name} = req.body;
 
-        const existingUser = await prisma.user.findFirst({
-            where: {
-                OR: [{username}, {email}],
-            },
-        });
+    const existingUser = await prisma.user.findFirst({
+        where: {
+            OR: [{username}, {email}],
+        },
+    });
 
-        if (existingUser) {
-            return res.status(409).json({error: "Username or email already taken"});
-        }
-
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        const user = await prisma.user.create({
-            data: {
-                username,
-                email,
-                password: hashedPassword,
-                name,
-            },
-        });
-
-        const accessToken = generateAccessToken(user.id);
-        const refreshToken = await createRefreshToken(user.id);
-
-        res.status(201).json({
-            user: {
-                id: user.id,
-                username: user.username,
-                email: user.email,
-                name: user.name,
-            },
-            accessToken,
-            refreshToken,
-        });
-    } catch (e) {
-        next(e);
+    if (existingUser) {
+        throw new HttpError(409, "Username or email already taken");
     }
-};
 
-export async function login(req: Request<{}, {}, LoginBody>, res: Response, next: NextFunction) {
-    try{
-        const {username, password} = req.body;
-        const user = await prisma.user.findUnique({where: {username}});
-        if (!user) {
-            return res.status(401).json({ error: "Invalid credentials" });
-        }
-        const isValidPassword = await bcrypt.compare(password, user.password);
-        if (!isValidPassword) {
-            return res.status(401).json({ error: "Invalid credentials" });
-        }
 
-        const accessToken = generateAccessToken(user.id);
-        const refreshToken = await createRefreshToken(user.id);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-        await prisma.refreshToken.deleteMany({
-            where: { userId: user.id },
-        });
+    const user = await prisma.user.create({
+        data: {
+            username,
+            email,
+            password: hashedPassword,
+            name,
+        },
+    });
 
-        res.status(200).json({
-            user: {
-                id: user.id,
-                username: user.username,
-                email: user.email,
-                name: user.name,
-            },
-            accessToken,
-            refreshToken,
-        })
+    const accessToken = generateAccessToken(user.id);
+    const refreshToken = await createRefreshToken(user.id);
 
-    } catch (e) {
-        next(e);
+    res.status(201).json({
+        user: {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            name: user.name,
+        },
+        accessToken,
+        refreshToken,
+    });
+
+})
+
+export const login = asyncHandler(async (req, res) => {
+    const {username, password} = req.body;
+    const user = await prisma.user.findUnique({where: {username}});
+
+    if (!user) {
+        throw new HttpError(401, "Invalid credentials");
     }
-    return res.status(501).json({error: "Not implemented"});
-}
+    const isValidPassword = await bcrypt.compare(password, user.password);
+    if (!isValidPassword) {
+        throw new HttpError(401, "Invalid credentials");
+    }
+
+    await prisma.refreshToken.deleteMany({
+        where: {userId: user.id},
+    });
+
+    const accessToken = generateAccessToken(user.id);
+    const refreshToken = await createRefreshToken(user.id);
+
+    res.status(200).json({
+        user: {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            name: user.name,
+        },
+        accessToken,
+        refreshToken,
+    })
+})
 
 export async function refresh(req: Request, res: Response, next: NextFunction) {
     // TODO: verify refresh token, rotate tokens
