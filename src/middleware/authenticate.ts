@@ -1,11 +1,12 @@
 import type { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
+import {HttpError} from "../utils/httpError.ts";
 
 export function authenticate(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ error: "Unauthorized" });
+    return next(new HttpError(401, "Unauthorized"));
   }
 
   const token = authHeader.slice(7);
@@ -15,6 +16,6 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
     (req as any).user = payload;
     next();
   } catch {
-    return res.status(401).json({ error: "Invalid or expired token" });
+    next(new HttpError(401, "Invalid or expired token"));
   }
 }

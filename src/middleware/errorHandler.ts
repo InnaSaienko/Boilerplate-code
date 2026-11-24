@@ -1,20 +1,15 @@
-// Error handling middleware
-import type {NextFunction, Request, Response} from "express";
+import type { Request, Response, NextFunction } from "express";
+import { HttpError } from "../utils/httpError.ts";
 
-export const errorHandler = ((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    console.error(err);
-
-    if (err.type === "entity.parse.failed") {
-        return res.status(400).json({
-            error: "Validation error occurred",
-            details: {
-                body: ["Invalid JSON format in request body"],
-            },
-        });
-    }
-
-    if (err.status && err.status >= 400 && err.status < 500) {
+export function errorHandler(
+    err: any,
+    req: Request,
+    res: Response,
+    next: NextFunction) {
+    if (err instanceof HttpError) {
         return res.status(err.status).json({ error: err.message });
     }
+
+    console.error(err);
     res.status(500).json({ error: "Internal server error" });
-});
+}
