@@ -1,4 +1,3 @@
-import type {NextFunction, Request, Response} from "express";
 import prisma from "../../prisma/client.ts";
 import bcrypt from "bcrypt";
 import {
@@ -135,7 +134,7 @@ export const logout = asyncHandler(async (req, res) => {
 
 })
 
-export const me = asyncHandler(async (req, res) => {
+export const me = asyncHandler(async (req, _res) => {
     if (!req.user?.userId) {
         throw new HttpError(401, "Unauthorized");
     }

@@ -4,6 +4,7 @@ import {
   OpenAPIRegistry,
 } from "@asteasolutions/zod-to-openapi";
 import { z } from "zod";
+import {registerSchema} from "./validators/auth.validator.ts";
 
 extendZodWithOpenApi(z);
 
@@ -13,6 +14,36 @@ registry.registerComponent("securitySchemes", "bearerAuth", {
   type: "http",
   scheme: "bearer",
   bearerFormat: "JWT",
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/auth/register",
+  tags: ["Auth"],
+  request: {
+    body: {
+      content: {
+        "application/json": {
+          schema: registerSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    201: { description: "Created" },
+    409: { description: "Username or email already taken" },
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/auth/me",
+  tags: ["Auth"],
+  security: [{ bearerAuth: [] }],
+  responses: {
+    200: { description: "Current user" },
+    401: { description: "Unauthorized" },
+  },
 });
 
 export function generateOpenApiDocument() {
