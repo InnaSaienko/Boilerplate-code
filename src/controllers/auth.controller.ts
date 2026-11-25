@@ -83,7 +83,7 @@ export const login = asyncHandler(async (req, res) => {
 export const refresh = asyncHandler(async (req, res) => {
     const {refreshToken} = req.body as RefreshInput;
 
-    let payload: { userId: number };
+    let payload: { userId: string };
 
     try {
         payload = verifyRefreshToken(refreshToken);
@@ -104,7 +104,7 @@ export const refresh = asyncHandler(async (req, res) => {
     });
 
     const user = await prisma.user.findUnique({
-        where: {id: payload.userId},
+        where: {id: Number(payload.userId)},
         select: {id: true, username: true, email: true, name: true},
     });
 
@@ -141,7 +141,7 @@ export const me = asyncHandler(async (req, _res) => {
     }
 
     const user = await prisma.user.findUnique({
-        where: {id: req.user.userId},
+        where: {id: Number(req.user.userId)},
         select: {
             id: true,
             username: true,
