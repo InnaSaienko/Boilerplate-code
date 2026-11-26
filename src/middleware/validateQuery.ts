@@ -1,5 +1,8 @@
 import type { NextFunction, Request, Response } from "express";
 import { z } from "zod";
+import {querySchema} from "../validators/announcments.validator.ts";
+
+export type QueryParams = z.infer<typeof querySchema>;
 
 export function validateQuery(schema: z.ZodType) {
     return (req: Request, res: Response, next: NextFunction) => {
@@ -12,7 +15,7 @@ export function validateQuery(schema: z.ZodType) {
             });
         }
 
-        req.query = result.data as typeof req.query;
+        res.locals.query = result.data as typeof req.query;
         next();
     };
 }
