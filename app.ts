@@ -5,6 +5,7 @@ import {errorHandler} from "./src/middleware/errorHandler.ts"
 import authRoutes from "./src/routes/auth.routes.ts";
 import {generateOpenApiDocument} from "./src/openapi.ts";
 import swaggerUi from "swagger-ui-express";
+import announceRouter from "./src/routes/announcments.routes.ts";
 
 const app = express();
 
@@ -12,6 +13,7 @@ app.use(cookieParser());
 app.use(express.json());
 
 app.use("/auth", authRoutes);
+app.use("/announcements", announceRouter);
 app.use(errorHandler);
 
 const openApiDocument = generateOpenApiDocument();
